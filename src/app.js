@@ -6,10 +6,12 @@ const errorHandler = require("./middlewares/errorHandler");
 const notFound = require("./middlewares/notFound");
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(require("morgan")("dev"));
 
 
 app.get("/api/health", (req, res) => {res.status(200).json("OK")})
+app.use("/api/v1/uploads", require("./routes/uploads.route"));
 
 app.use(errorHandler);
 app.use(notFound);
