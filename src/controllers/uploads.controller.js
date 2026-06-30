@@ -1,3 +1,4 @@
+const UploadToCloudinary = require("../utils/uploadToCloudinary");
 class UploadController {
     local = async (req, res) => {
         const file = req.file;
@@ -12,6 +13,14 @@ class UploadController {
     }
 
     cloud = async (req, res) => {
+        const file = req.file;
+        if (!file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const path = await UploadToCloudinary(file);
+
+        res.status(200).json({ message: "File uploaded successfully", path });
 
     } 
 }
