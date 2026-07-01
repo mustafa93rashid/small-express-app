@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Socket.IO Chat Test</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, #1d4ed8, #020617 45%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1180px;
+      height: 760px;
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
+    }
+
+    .sidebar {
+      padding: 24px;
+      border-right: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.65);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      display: grid;
+      place-items: center;
+    }
+
+    .label {
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .avatar {
+      width: 78px;
+      height: 78px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #9333ea);
+      display: grid;
+      place-items: center;
+      font-size: 34px;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(96, 165, 250, 0.5);
+      background: rgba(15, 23, 42, 0.75);
+      color: #fff;
+      outline: none;
+      font-size: 14px;
+    }
+
+    input::placeholder {
+      color: #94a3b8;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 14px;
+      font-weight: 800;
+      color: #fff;
+      transition: 0.25s;
+    }
+
+    .primary-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .secondary-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px;
+      background: rgba(37, 99, 235, 0.16);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+    }
+
+    .logout-btn {
+      margin-top: auto;
+      padding: 14px;
+      background: transparent;
+      border: 1px solid #fb7185;
+      color: #fb7185;
+    }
+
+    .logout-btn:hover {
+      background: rgba(251, 113, 133, 0.12);
+    }
+
+    .preview-image {
+      width: 100%;
+      height: 145px;
+      object-fit: cover;
+      border-radius: 14px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(15, 23, 42, 0.75);
+    }
+
+    .file-input {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .upload-status {
+      display: block;
+      margin-top: 12px;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .upload-status a {
+      color: #60a5fa;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      background: #22c55e;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .socket-id {
+      margin-top: 10px;
+      color: #94a3b8;
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .chat-header {
+      padding: 26px 30px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .chat-header p {
+      margin: 6px 0 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 30px;
+      background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 35%),
+        rgba(2, 6, 23, 0.2);
+    }
+
+    .system-message {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+      margin: 18px 0;
+    }
+
+    .message-row {
+      display: flex;
+      margin-bottom: 18px;
+    }
+
+    .message-row.me {
+      justify-content: flex-end;
+    }
+
+    .message-row.other {
+      justify-content: flex-start;
+    }
+
+    .bubble {
+      max-width: 62%;
+      padding: 13px 15px;
+      border-radius: 18px;
+      line-height: 1.5;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .me .bubble {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      border-bottom-right-radius: 6px;
+    }
+
+    .other .bubble {
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-bottom-left-radius: 6px;
+    }
+
+    .sender {
+      color: #a78bfa;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .time {
+      margin-top: 6px;
+      color: #cbd5e1;
+      font-size: 11px;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    .typing {
+      height: 26px;
+      padding: 0 30px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .composer {
+      padding: 20px 30px 26px;
+      display: flex;
+      gap: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .send-btn {
+      padding: 0 22px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">💬</div>
+        Socket.IO Chat
+      </div>
+
+      <div>
+        <div class="label">Your Profile</div>
+        <div class="card">
+          <div class="avatar">👤</div>
+          <input id="username" placeholder="Enter your username" />
+          <button class="primary-btn" onclick="joinChat()">Join Chat</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="label">Image Upload</div>
+        <div class="card">
+          <img
+            id="preview"
+            class="preview-image"
+            src="https://placehold.co/300x180/0f172a/94a3b8?text=Image+Preview"
+            alt="Image Preview"
+          />
+
+          <input
+            class="file-input"
+            type="file"
+            id="image"
+            accept="image/jpeg,image/png,image/webp"
+          />
+
+          <button class="primary-btn" onclick="uploadLocal()">
+            Upload Local
+          </button>
+
+          <button class="secondary-btn" onclick="uploadCloud()">
+            Upload Cloud
+          </button>
+
+          <small class="upload-status" id="uploadStatus">
+            Select an image to test upload APIs.
+          </small>
+        </div>
+      </div>
+
+      <div>
+        <div class="label">Connection Status</div>
+        <div class="card">
+          <div><span class="dot"></span><span id="status">Connecting...</span></div>
+          <div class="socket-id" id="socketId"></div>
+        </div>
+      </div>
+
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </aside>
+
+    <main class="main">
+      <header class="chat-header">
+        <div>
+          <h2>General Chat</h2>
+          <p>Welcome! Start testing Socket.IO events and upload APIs.</p>
+        </div>
+        <div>🌙</div>
+      </header>
+
+      <section class="messages" id="messages"></section>
+
+      <div class="typing" id="typing"></div>
+
+      <div class="composer">
+        <input id="message" placeholder="Type a message..." oninput="sendTyping()" />
+        <button class="send-btn" onclick="sendMessage()">Send</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <script>
+    const socket = io();
+
+    const statusEl = document.getElementById("status");
+    const socketIdEl = document.getElementById("socketId");
+    const messagesEl = document.getElementById("messages");
+    const typingEl = document.getElementById("typing");
+
+    const imageInput = document.getElementById("image");
+    const previewEl = document.getElementById("preview");
+    const uploadStatusEl = document.getElementById("uploadStatus");
+
+    let username = "";
+
+    socket.on("connect", () => {
+      statusEl.textContent = "Connected";
+      socketIdEl.textContent = `ID: ${socket.id}`;
+    });
+
+    socket.on("disconnect", () => {
+      statusEl.textContent = "Disconnected";
+      socketIdEl.textContent = "";
+      addSystemMessage("You are disconnected");
+    });
+
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files[0];
+
+      if (!file) return;
+
+      previewEl.src = URL.createObjectURL(file);
+      uploadStatusEl.textContent = "Image selected. Choose local or cloud upload.";
+    });
+
+    function getTime() {
+      return new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function addSystemMessage(text) {
+      const div = document.createElement("div");
+      div.className = "system-message";
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function addMessage(data) {
+      const isMe = data.username === username;
+
+      const row = document.createElement("div");
+      row.className = `message-row ${isMe ? "me" : "other"}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+
+      bubble.innerHTML = `
+        ${!isMe ? `<div class="sender">${data.username}</div>` : ""}
+        <div>${data.text}</div>
+        <div class="time">${getTime()}</div>
+      `;
+
+      row.appendChild(bubble);
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function joinChat() {
+      const value = document.getElementById("username").value.trim();
+
+      if (!value) return alert("Please enter a username");
+
+      username = value;
+
+      socket.emit("chat:join", { username });
+      addSystemMessage(`You joined as ${username}`);
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("message");
+      const text = input.value.trim();
+
+      if (!username) return alert("Please join first");
+      if (!text) return;
+
+      socket.emit("chat:message", { username, text });
+      input.value = "";
+    }
+
+    function sendTyping() {
+      if (!username) return;
+      socket.emit("chat:typing", { username });
+    }
+
+    function logout() {
+      if (!username) return;
+
+      addSystemMessage(`${username} logged out`);
+      username = "";
+      document.getElementById("username").value = "";
+      document.getElementById("message").value = "";
+      typingEl.textContent = "";
+
+      socket.disconnect();
+    }
+
+    async function uploadLocal() {
+      const file = imageInput.files[0];
+
+      if (!file) {
+        return alert("Please select an image first");
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      uploadStatusEl.textContent = "Uploading to local storage...";
+
+      try {
+        const response = await fetch("/api/v1/upload/local", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Local upload failed");
+        }
+
+        const fileUrl = "/" + data.filePath.replace(/\\/g, "/");
+
+        uploadStatusEl.innerHTML = `
+          Local upload success.
+          <br />
+          <a href="${fileUrl}" target="_blank">Open local image</a>
+        `;
+
+        addSystemMessage("Image uploaded locally successfully");
+      } catch (error) {
+        uploadStatusEl.textContent = error.message;
+      }
+    }
+
+    async function uploadCloud() {
+      const file = imageInput.files[0];
+
+      if (!file) {
+        return alert("Please select an image first");
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      uploadStatusEl.textContent = "Uploading to Cloudinary...";
+
+      try {
+        const response = await fetch("/api/v1/upload/cloud", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Cloud upload failed");
+        }
+
+        const imageUrl = data.url || data.path;
+
+        uploadStatusEl.innerHTML = `
+          Cloud upload success.
+          <br />
+          <a href="${imageUrl}" target="_blank">Open Cloudinary image</a>
+        `;
+
+        addSystemMessage("Image uploaded to Cloudinary successfully");
+      } catch (error) {
+        uploadStatusEl.textContent = error.message;
+      }
+    }
+
+    socket.on("user-joined", (data) => {
+      addSystemMessage(data.message);
+    });
+
+    socket.on("chat:message", (data) => {
+      addMessage(data);
+      typingEl.textContent = "";
+    });
+
+    socket.on("chat:typing", (data) => {
+      if (data.username === username) return;
+
+      typingEl.textContent = `${data.username} is typing...`;
+
+      setTimeout(() => {
+        typingEl.textContent = "";
+      }, 1200);
+    });
+  </script>
+</body>
+</html>
