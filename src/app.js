@@ -71,6 +71,8 @@ io.on("connection", (socket) => {
 mongoose.connect(MONGODB_URL)
     .then(() => {
         console.log("Connected to MONGODB Successfully");
+            console.log("Database:", mongoose.connection.name);
+
         server.listen(PORT, () => {
             console.log(`Server is running on http://localhost:${PORT}`);
         })
