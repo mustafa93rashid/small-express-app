@@ -12,29 +12,22 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let folder = "uploads/";
-    if (file.mimetype.startsWith("image/")) {
-      folder += "images/";
+    const uploadPath = path.join(process.cwd(), "uploads", "images");
+
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
     }
 
-    cb(null, folder);
+    cb(null, uploadPath);
   },
 
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9); // 1023u023u4023u94
-    const fileExtension = path.extname(file.originalname); // image.png => png
-    const baseName = path.basename(file.originalname, fileExtension); // image.png => image
-    const safeFileName = baseName.replace(/[^a-zA-Z0-9]/g, "_"); // A => _
+    const uniqueName =
+      "image-" + Date.now() + "-" + Math.round(Math.random() * 1e9);
 
-    cb(null, safeFileName + "-" + uniqueSuffix + fileExtension); // image-1023u023u4023u94.png
+    cb(null, uniqueName + path.extname(file.originalname));
   },
 });
 
